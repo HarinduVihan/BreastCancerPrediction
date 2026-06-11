@@ -9,7 +9,8 @@ app = Flask(__name__, template_folder='templates', static_folder='static', stati
 
 # Load the model and metadata on startup
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(CURRENT_DIR, 'breast_cancer_model.joblib')
+MODEL_PATH = os.path.join(CURRENT_DIR, 'models/breast_cancer_model.joblib')
+# MODEL_PATH = os.path.join(CURRENT_DIR, 'models/breast_cancer_model_random_forest.joblib')
 METADATA_PATH = os.path.join(CURRENT_DIR, 'metadata.json')
 
 model_pipeline = None

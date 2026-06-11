@@ -77,7 +77,7 @@ def train_and_serialize():
     print(f"Pipeline self-accuracy on training set: {train_acc:.4f} (expected: ~1.0000)")
     
     # 5. Serialize the pipeline to disk
-    model_path = os.path.join(current_dir, 'breast_cancer_model.joblib')
+    model_path = os.path.join(current_dir, 'models/breast_cancer_model.joblib')
     joblib.dump(pipeline, model_path)
     print(f"Serialized model saved successfully to: {model_path}")
 
