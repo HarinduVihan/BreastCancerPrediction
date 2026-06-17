@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 def train_and_serialize():
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    csv_path = os.path.join(current_dir, 'sourceFiles\Cancer_Data.csv')
+    csv_path = os.path.join(current_dir, 'sourceFiles', 'Cancer_Data.csv')
     
     print(f"Loading dataset from: {csv_path}")
     if not os.path.exists(csv_path):
