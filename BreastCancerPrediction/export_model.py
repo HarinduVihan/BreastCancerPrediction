@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import joblib
 import numpy as np
@@ -28,7 +29,7 @@ def serialize_tree(tree, node_id=0):
 def export():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(current_dir, 'models/breast_cancer_model.joblib')
-    metadata_path = os.path.join(current_dir, 'metadata.json')
+    metadata_path = os.path.join(current_dir, 'static/metadata.json')
     
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model not found at {model_path}")
@@ -60,7 +61,7 @@ def export():
         "trees": serialized_trees
     }
     
-    out_dir = os.path.join(current_dir, 'data')
+    out_dir = os.path.join(current_dir, 'static/data')
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, 'model_data.json')
     
@@ -104,6 +105,7 @@ def export():
         print("SANITY CHECK PASSED: Predictions match exactly!")
     else:
         print("SANITY CHECK FAILED: Predictions do not match!")
+        sys.exit(1)
 
 if __name__ == "__main__":
     export()

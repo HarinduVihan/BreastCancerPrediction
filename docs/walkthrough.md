@@ -1,60 +1,59 @@
-# Walkthrough - GitHub Pages Migration
+# Walkthrough - GitHub Pages Migration (Zero-Redundancy Edition)
 
-We have successfully migrated the OncoPredict AI Breast Cancer Diagnostic Assistant from a Python/Flask-based web application to a pure client-side static website. The prediction model (Random Forest Classifier, 140 estimators) is now executed directly in the browser using JavaScript tree traversal.
+We have successfully migrated the OncoPredict AI Breast Cancer Diagnostic Assistant from a Python/Flask-based web application to a pure client-side static website. In this latest refinement, we removed all duplicate assets from the repository root. The static site is now compiled and packaged dynamically inside the GitHub Actions runner.
 
 ---
 
-## Key Achievements
+## Clean Architecture (Zero-Redundancy)
 
-1. **Model Parameter Serialization**: Written [export_model.py](file:///d:/Web%20designs/BreastCancerPrediction/BreastCancerPrediction/export_model.py) which loads `breast_cancer_model.joblib` and extracts all 140 decision tree architectures (splits, features, thresholds, leaf probabilities) and feature importances into a compact JSON file [model_data.json](file:///d:/Web%20designs/BreastCancerPrediction/data/model_data.json).
-2. **Parity Verification**: Verified that predictions made by the Python scikit-learn model and the client-side JavaScript traversal match exactly (with `0.00` discrepancy).
-3. **Repository Restructuring**: Placed the static site assets directly at the repository root:
-   - [index.html](file:///d:/Web%20designs/BreastCancerPrediction/index.html) - Entry point (configured with relative asset paths).
-   - [css/style.css](file:///d:/Web%20designs/BreastCancerPrediction/css/style.css) - Styling stylesheet.
-   - [js/main.js](file:///d:/Web%20designs/BreastCancerPrediction/js/main.js) - Script loaded with the recursive prediction engine and UI updates.
-   - [metadata.json](file:///d:/Web%20designs/BreastCancerPrediction/metadata.json) - Dataset feature bounds and means.
-   - [data/model_data.json](file:///d:/Web%20designs/BreastCancerPrediction/data/model_data.json) - Model weights and parameters.
+We removed the redundant static copies from the repository root. The single source of truth for the project resides inside the [BreastCancerPrediction](file:///d:/Web%20designs/BreastCancerPrediction/BreastCancerPrediction) subdirectory:
+- [templates/index.html](file:///d:/Web%20designs/BreastCancerPrediction/BreastCancerPrediction/templates/index.html) - Main dashboard structure (uses relative assets).
+- [static/css/style.css](file:///d:/Web%20designs/BreastCancerPrediction/BreastCancerPrediction/static/css/style.css) - Styling stylesheet.
+- [static/js/main.js](file:///d:/Web%20designs/BreastCancerPrediction/BreastCancerPrediction/static/js/main.js) - Complete script loaded with the recursive prediction engine and UI updates.
+- [static/metadata.json](file:///d:/Web%20designs/BreastCancerPrediction/BreastCancerPrediction/static/metadata.json) - Dataset statistics generated during training.
+- [static/data/model_data.json](file:///d:/Web%20designs/BreastCancerPrediction/BreastCancerPrediction/static/data/model_data.json) - Exported decision tree weights and structures.
+
+---
+
+## Automated CI/CD Pipeline
+
+The GitHub Actions workflow in [.github/workflows/deploy.yml](file:///d:/Web%20designs/BreastCancerPrediction/.github/workflows/deploy.yml) automatically compiles the site on push:
+1. **Model Regeneration (CI)**: Runs `train_model.py` and `export_model.py` to compile the newest metadata and decision tree JSON objects.
+2. **Parity Check**: Runs validation test checks. If there is a prediction discrepancy, the deployment is aborted.
+3. **Bundle Compilation (CD)**:
+   - Creates a temporary `build/` workspace directory in the runner.
+   - Copies `templates/index.html` to `build/index.html`.
+   - Copies the entire `static/` directory (containing JS, CSS, and models) to `build/static/`.
+4. **Deploy**: Uploads and deploys the compiled `build/` folder directly to GitHub Pages.
 
 ---
 
 ## Verification Results
 
-We verified the client-side prediction logic using an offline JS test harness. Below are the results:
-
-### Test Case 1: Baseline Averages (Expected: Benign)
-* **Status**: PASS
-* **Outcome**: `Benign`
-* **Confidence**: `72.1429%` (matches the Python scikit-learn probability of `72.142857%` exactly)
-* **Top Contributing Factors**: Symmetry Mean, Fractal Dimension Mean, Symmetry SE, Compactness SE.
-
-### Test Case 2: High Malignant-Skewed Values (Expected: Malignant)
-* **Status**: PASS
-* **Outcome**: `Malignant`
-* **Confidence**: `100.00%`
-* **Top Contributing Factors**: Perimeter Worst, Radius Worst, Concave Points Worst, Concave Points Mean.
+We verified that the updated model paths (`static/metadata.json` and `static/data/model_data.json`) resolve correctly:
+* **Benign Default Case**: Passed (discrepancy `0.00e+00` compared to scikit-learn probability).
+* **Malignant Skewed Case**: Passed (discrepancy `0.00e+00` compared to scikit-learn probability).
 
 ---
 
-## How to Host on GitHub Pages
+## How to Deploy with CI/CD
 
-Follow these simple steps to deploy your now static site to GitHub:
+Follow these steps to deploy and activate the pipeline:
 
 1. **Commit and Push to GitHub**:
-   Open a terminal in the project root and push your changes to your repository:
+   Add and commit files, and push to your remote repository branch:
    ```bash
    git add .
-   git commit -m "Migrate to static website for GitHub Pages"
-   git push origin main
+   git commit -m "Migrate to static Pages deployment via compiled build folder in CI/CD"
+   git push origin main # Change branch name if different
    ```
 
-2. **Enable GitHub Pages**:
-   - Go to your repository on GitHub.
+2. **Enable GitHub Pages via Actions**:
+   - Go to your repository page on GitHub.
    - Click on the **Settings** tab.
    - In the left sidebar, click on **Pages** (under the "Code and automation" section).
-   - Under **Build and deployment**, select **Deploy from a branch** as the source.
-   - Under **Branch**, select your main branch (e.g., `main`) and set the folder to `/ (root)`.
-   - Click **Save**.
+   - Under **Build and deployment** -> **Source**, select **GitHub Actions** from the dropdown menu.
 
-3. **Visit Your Site**:
-   GitHub will deploy your site within a minute. Your application will be live at:
-   `https://<your-username>.github.io/<your-repository-name>/`
+3. **Check Deployments**:
+   - Go to the **Actions** tab in your repository.
+   - Once the workflow completes, the live link will be printed directly in the job summary details!

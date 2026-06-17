@@ -55,7 +55,7 @@ def train_and_serialize():
         metadata["features"].append(feature_stats)
         
     # Save the statistical metadata to JSON
-    metadata_path = os.path.join(current_dir, 'metadata.json')
+    metadata_path = os.path.join(current_dir, 'static/metadata.json')
     with open(metadata_path, 'w') as f:
         json.dump(metadata, f, indent=4)
     print(f"Saved dataset metadata and statistics to: {metadata_path}")
