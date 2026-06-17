@@ -1,17 +1,17 @@
 /* ==========================================================================
-   OncoPredict AI JavaScript - Client-Side Interactive Engine
+   OncoPredict AI JavaScript - Pure Client-Side Interactive Engine
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Feature Storage & Statistics
+    // Feature and Model Data Storage
     let featuresData = [];
+    let modelData = null;
     
     // UI Elements
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     const predictForm = document.getElementById('predict-form');
     const resetBtn = document.getElementById('reset-btn');
-    const submitBtn = document.getElementById('submit-btn');
     
     const stateIdle = document.getElementById('state-idle');
     const stateLoading = document.getElementById('state-loading');
@@ -30,8 +30,26 @@ document.addEventListener('DOMContentLoaded', () => {
     confidenceCircle.style.strokeDasharray = `${circumference} ${circumference}`;
     confidenceCircle.style.strokeDashoffset = circumference;
 
-    // Initialize: Fetch features from API
-    fetchFeatures();
+    // Load metadata and model files from the static subdirectory
+    Promise.all([
+        fetch('static/metadata.json').then(res => {
+            if (!res.ok) throw new Error("Failed to load static/metadata.json");
+            return res.json();
+        }),
+        fetch('static/data/model_data.json').then(res => {
+            if (!res.ok) throw new Error("Failed to load static/data/model_data.json");
+            return res.json();
+        })
+    ])
+    .then(([metadata, model]) => {
+        featuresData = metadata.features;
+        modelData = model;
+        generateInputs();
+    })
+    .catch(err => {
+        console.error("Error loading application configuration:", err);
+        alert("Configuration Error: Failed to load model parameters. If running locally, please ensure you serve the site from a local HTTP server rather than opening index.html directly from file:// (due to browser CORS security restrictions).");
+    });
 
     // Tab Switching Logic
     tabBtns.forEach(btn => {
@@ -67,22 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Dynamic UI Methods ---
-
-    function fetchFeatures() {
-        fetch('/api/features')
-            .then(res => res.json())
-            .then(res => {
-                if (res.success) {
-                    featuresData = res.data.features;
-                    generateInputs();
-                } else {
-                    console.error("API error loading features:", res.error);
-                }
-            })
-            .catch(err => {
-                console.error("Network error loading features:", err);
-            });
-    }
 
     function generateInputs() {
         // Clear templates
@@ -196,48 +198,123 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confidence-percent').textContent = `${Math.round(percent)}%`;
     }
 
-    // --- API & Prediction Processing ---
+    // --- Decision Tree Inference Engine ---
+
+    function predictTree(node, features) {
+        if (node.leaf) {
+            return node.value;
+        }
+        const val = features[node.feature_idx];
+        if (val <= node.threshold) {
+            return predictTree(node.left, features);
+        } else {
+            return predictTree(node.right, features);
+        }
+    }
+
+    function predictForest(forest, features) {
+        let sumProbs = [0, 0];
+        for (let i = 0; i < forest.length; i++) {
+            const probs = predictTree(forest[i], features);
+            sumProbs[0] += probs[0];
+            sumProbs[1] += probs[1];
+        }
+        sumProbs[0] /= forest.length;
+        sumProbs[1] /= forest.length;
+        return sumProbs;
+    }
+
+    // --- Prediction Processing & UI Rendering ---
 
     function runMorphologyPrediction() {
+        if (!modelData || !featuresData.length) {
+            alert("Prediction failed: Model parameters are not loaded yet.");
+            return;
+        }
+
         // Toggle view states
         stateIdle.classList.add('d-none');
         stateActive.classList.add('d-none');
         stateLoading.classList.remove('d-none');
         
-        // Construct prediction JSON body
-        const payload = {};
-        featuresData.forEach(feat => {
-            const name = feat.name;
-            const inputVal = document.getElementById(`box-${name}`).value;
-            payload[name] = parseFloat(inputVal);
-        });
-        
-        // POST to Flask Prediction Endpoint
-        fetch('/api/predict', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(res => {
-            stateLoading.classList.add('d-none');
-            
-            if (res.success) {
+        // Use a tiny timeout to let the loading screen draw
+        setTimeout(() => {
+            try {
+                // Construct inputs array matching modelData.feature_names order
+                const inputs = modelData.feature_names.map(name => {
+                    const inputVal = document.getElementById(`box-${name}`).value;
+                    const num = parseFloat(inputVal);
+                    if (isNaN(num)) throw new Error(`Invalid numerical value for feature: ${name}`);
+                    return num;
+                });
+
+                // 1. Run client-side Random Forest prediction
+                const probs = predictForest(modelData.trees, inputs); // [prob_benign, prob_malignant]
+                const predictionCode = probs[1] >= 0.5 ? 1 : 0;
+                const className = predictionCode === 1 ? "Malignant" : "Benign";
+                const confidence = probs[predictionCode] * 100;
+
+                // 2. Compute recommendations
+                let recommendation = "";
+                if (predictionCode === 1) {
+                    recommendation = "Critical Alert: The morphological analysis indicates a high probability of malignancy (Malignant tumor). Immediate histopathological correlation (biopsy) and clinical consultation are strongly advised.";
+                } else {
+                    recommendation = "Normal/Low Risk: The morphological characteristics indicate a benign cellular state. Continue routine preventative screenings as standard caution.";
+                }
+
+                // 3. Compute explanation contribution scores (exact match with app.py logic)
+                const contributions = featuresData.map(feat => {
+                    const name = feat.name;
+                    const val = parseFloat(document.getElementById(`box-${name}`).value);
+                    const b_mean = feat.benign_mean;
+                    const m_mean = feat.malignant_mean;
+                    const importance = modelData.feature_importances[name] || 0.0;
+
+                    // Compute proximity to malignant average weighted by feature importance
+                    const mal_proximity = 1.0 - (Math.abs(val - m_mean) / (Math.abs(val - m_mean) + Math.abs(val - b_mean) + 1e-5));
+                    const weighted_contrib = mal_proximity * importance;
+
+                    return {
+                        name: name,
+                        display_name: feat.display_name,
+                        input_value: val,
+                        benign_mean: b_mean,
+                        malignant_mean: m_mean,
+                        importance: importance,
+                        contribution_score: weighted_contrib
+                    };
+                });
+
+                // Sort features based on their contribution to the predicted class
+                const contributionsCopy = [...contributions];
+                if (predictionCode === 1) {
+                    contributionsCopy.sort((a, b) => b.contribution_score - a.contribution_score);
+                } else {
+                    contributionsCopy.sort((a, b) => a.contribution_score - b.contribution_score);
+                }
+                const topFactors = contributionsCopy.slice(0, 4);
+
+                const predictionResult = {
+                    success: true,
+                    prediction: className,
+                    prediction_code: predictionCode,
+                    confidence: Math.round(confidence * 100) / 100,
+                    recommendation: recommendation,
+                    top_factors: topFactors,
+                    all_features_comparison: contributions
+                };
+
+                stateLoading.classList.add('d-none');
                 stateActive.classList.remove('d-none');
-                renderResults(res);
-            } else {
+                renderResults(predictionResult);
+
+            } catch (err) {
+                console.error("Client side prediction failed:", err);
+                stateLoading.classList.add('d-none');
                 stateIdle.classList.remove('d-none');
-                alert("Prediction failed: " + res.error);
+                alert("Error during client-side prediction: " + err.message);
             }
-        })
-        .catch(err => {
-            stateLoading.classList.add('d-none');
-            stateIdle.classList.remove('d-none');
-            console.error("Inference server request failed:", err);
-            alert("Error: Inference API is currently unreachable. Make sure python app.py is running!");
-        });
+        }, 300);
     }
 
     function renderResults(data) {
@@ -305,11 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
         displayComparisons.forEach(comp => {
             const val = comp.input_value;
-            const min = comp.malignant_mean < comp.benign_mean ? comp.malignant_mean : comp.benign_mean;
-            const max = comp.malignant_mean > comp.benign_mean ? comp.malignant_mean : comp.benign_mean;
             
-            // Calculate slider dot percentage
-            const span = comp.malignant_mean !== comp.benign_mean ? Math.abs(comp.malignant_mean - comp.benign_mean) : 1.0;
             // Map the value onto the relative scale between benign mean and malignant mean
             let position = ((val - comp.benign_mean) / (comp.malignant_mean - comp.benign_mean)) * 100;
             
@@ -319,10 +392,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const row = document.createElement('div');
             row.className = 'comp-row';
-            
-            // Arrange label highlights
-            const leftLabel = comp.benign_mean < comp.malignant_mean ? "Benign Average" : "Malignant Average";
-            const rightLabel = comp.benign_mean < comp.malignant_mean ? "Malignant Average" : "Benign Average";
             
             row.innerHTML = `
                 <div class="comp-header">
