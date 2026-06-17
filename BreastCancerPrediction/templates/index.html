@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OncoPredict AI - Breast Cancer Diagnostic Assistant</title>
+    <link rel="icon" type="image/svg+xml" href="./microscope-solid-full.svg" />
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Local Stylesheet -->
     <link rel="stylesheet" href="static/css/style.css">
 </head>
+
 <body>
     <!-- Background glowing shapes for glassmorphic depth -->
     <div class="glow-bg">
@@ -73,7 +78,8 @@
                     <div class="tab-content active" id="tab-means">
                         <div class="features-grid" id="grid-means">
                             <!-- Populated dynamically via Javascript -->
-                            <div class="loading-features"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading measurement sliders...</div>
+                            <div class="loading-features"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading
+                                measurement sliders...</div>
                         </div>
                     </div>
 
@@ -112,10 +118,12 @@
                         <div class="cell-pulse"></div>
                     </div>
                     <h3>Morphology Diagnostic Center</h3>
-                    <p>Fill out the cellular nuclei values in the sliders on the left and click <strong>Analyze Morphology</strong> to generate a diagnostic prediction.</p>
+                    <p>Fill out the cellular nuclei values in the sliders on the left and click <strong>Analyze
+                            Morphology</strong> to generate a diagnostic prediction.</p>
                     <div class="clinical-note">
                         <i class="fa-solid fa-circle-info"></i>
-                        <span>This system runs on a 7-fold Cross-Validated Random Forest Classifier achieving 97.37% diagnostic precision.</span>
+                        <span>This system runs on a 7-fold Cross-Validated Random Forest Classifier achieving 97.37%
+                            diagnostic precision.</span>
                     </div>
                 </div>
 
@@ -153,8 +161,10 @@
                             <h5>Model Confidence</h5>
                             <div class="gauge-container">
                                 <svg class="progress-ring" width="120" height="120">
-                                    <circle class="progress-ring-circle-bg" stroke="rgba(255,255,255,0.06)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
-                                    <circle class="progress-ring-circle" id="confidence-circle" stroke="#00e5ff" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                    <circle class="progress-ring-circle-bg" stroke="rgba(255,255,255,0.06)"
+                                        stroke-width="8" fill="transparent" r="50" cx="60" cy="60" />
+                                    <circle class="progress-ring-circle" id="confidence-circle" stroke="#00e5ff"
+                                        stroke-width="8" fill="transparent" r="50" cx="60" cy="60" />
                                 </svg>
                                 <div class="gauge-text">
                                     <span id="confidence-percent">98%</span>
@@ -175,7 +185,8 @@
                     <!-- Feature Comparison Panel -->
                     <div class="result-subcard comparison-card">
                         <h5>Selected Measurements vs. Dataset Benchmarks</h5>
-                        <p class="section-description">Shows where your patient values sit compared to standard Benign (teal) and Malignant (pink) boundaries.</p>
+                        <p class="section-description">Shows where your patient values sit compared to standard Benign
+                            (teal) and Malignant (pink) boundaries.</p>
                         <div class="comparison-bars" id="comparison-bars">
                             <!-- Populated dynamically via Javascript -->
                         </div>
@@ -184,7 +195,8 @@
                     <!-- Clinical Recommendation Card -->
                     <div class="result-subcard recommendation-card" id="recommendation-card">
                         <h5><i class="fa-solid fa-file-medical"></i> Recommendations</h5>
-                        <p id="recommendation-text">Morphological characteristics indicate standard cellular structure. Keep scheduled preventative cytological checks.</p>
+                        <p id="recommendation-text">Morphological characteristics indicate standard cellular structure.
+                            Keep scheduled preventative cytological checks.</p>
                     </div>
 
                     <!-- Report Generator Actions -->
@@ -199,11 +211,13 @@
 
         <!-- Footer -->
         <footer class="app-footer">
-            <p>&copy; 2026 OncoPredict Systems. Optimized for clinical diagnostic validation. Powered by Random Forest Ensemble.</p>
+            <p>&copy; 2026 OncoPredict Systems. Optimized for clinical diagnostic validation. Powered by Random Forest
+                Ensemble.</p>
         </footer>
     </div>
 
     <!-- Dynamic Main JavaScript -->
     <script src="static/js/main.js"></script>
 </body>
+
 </html>
